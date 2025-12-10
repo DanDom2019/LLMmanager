@@ -1,16 +1,34 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { LLMDetector } from "./logic/detectors";
 
 function App() {
   // 0 = Idle (Grey), 1 = Thinking (Red), 2 = Ready (Green)
   const [status, setStatus] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
 
-  // Helper to cycle states for testing
-  const cycleState = () => {
-    setStatus((prev) => (prev + 1) % 3);
+  useEffect(() => {
+    // Initialize the detector
+    const detector = new LLMDetector((newStatus) => {
+      if (newStatus === "thinking") {
+        setStatus(1); // Red
+      } else {
+        // When it goes from Thinking -> Idle, that means it's READY (Green)
+        setStatus((prev) => (prev === 1 ? 2 : 0));
+      }
+    });
+
+    detector.start();
+
+    // Cleanup when component unmounts
+    return () => detector.stop();
+  }, []);
+
+  // Reset to Idle (Grey) when you click the Green checkmark
+  const handleAck = () => {
+    if (status === 2) setStatus(0);
+    setIsOpen(!isOpen);
   };
 
-  // Styles (Inline for simplicity in Phase 1)
   const styles = {
     blob: {
       width: "40px",
@@ -19,50 +37,25 @@ function App() {
       backgroundColor:
         status === 1 ? "#ff4d4d" : status === 2 ? "#4dff88" : "#888",
       boxShadow:
-        status === 1 ? "0 0 10px #ff4d4d" : "0 4px 6px rgba(0,0,0,0.1)",
+        status === 1 ? "0 0 15px #ff4d4d" : "0 4px 6px rgba(0,0,0,0.1)",
       cursor: "pointer",
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
       transition: "all 0.3s ease",
       border: "2px solid white",
-    },
-    menu: {
-      position: "absolute",
-      bottom: "50px",
-      right: "0",
-      background: "white",
-      padding: "10px",
-      borderRadius: "8px",
-      boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-      minWidth: "150px",
-      display: isOpen ? "block" : "none",
+      fontSize: "20px",
     },
   };
 
   return (
-    <>
-      {/* The Menu (Hidden by default) */}
-      <div style={styles.menu}>
-        <h4 style={{ margin: "0 0 8px 0", color: "#333" }}>Synapse Debug</h4>
-        <button onClick={cycleState} style={{ padding: "5px", width: "100%" }}>
-          Cycle State
-        </button>
-        <div style={{ fontSize: "10px", marginTop: "5px", color: "#666" }}>
-          Current:{" "}
-          {status === 1 ? "Thinking..." : status === 2 ? "Done!" : "Idle"}
-        </div>
-      </div>
-
-      {/* The Floating Blob */}
-      <div
-        style={styles.blob}
-        onClick={() => setIsOpen(!isOpen)}
-        title="Synapse AI Manager"
-      >
-        {status === 1 ? "⏳" : status === 2 ? "✅" : "🤖"}
-      </div>
-    </>
+    <div
+      style={styles.blob}
+      onClick={handleAck}
+      title={status === 1 ? "Thinking..." : "Idle"}
+    >
+      {status === 1 ? "⏳" : status === 2 ? "✅" : "🤖"}
+    </div>
   );
 }
 
