@@ -4,28 +4,75 @@ const CACHE_TTL_MS = 1000 * 60 * 60 * 6; // Refresh every 6 hours
 
 // --- Bundled fallback (always works offline) ---
 const FALLBACK_CONFIG = {
-  version: "0.0.1",
+  version: "2.0.0",
   platforms: {
     chatgpt: {
       hostname: "chatgpt.com",
-      stopSelectors: ["button[data-testid='stop-button']"],
+      stopSelectors: [
+        "button[data-testid='stop-button']",
+        "button[aria-label='Stop generating']",
+      ],
       sendSelectors: [
         "button[data-testid='send-button']",
+        "button[aria-label='Send prompt']",
         "#composer-submit-button",
       ],
       titleSelector: ".conversation-title",
+      inputSelector: "#prompt-textarea",
+      inputType: "textarea",
+      responseContainerSelector: "[data-message-id] .markdown",
+      loadingIndicatorSelectors: [
+        "[data-testid='thinking-indicator']",
+        ".result-streaming",
+      ],
+      streamingContainerSelector:
+        "[data-testid='conversation-turn-stream'], .result-streaming",
     },
     claude: {
       hostname: "claude.ai",
-      stopSelectors: ["button[aria-label='Stop']"],
-      sendSelectors: ["button[aria-label='Send message']"],
+      stopSelectors: [
+        "button[aria-label='Stop Response']",
+        "button[aria-label='Stop']",
+        "button[data-testid='stop-response']",
+      ],
+      sendSelectors: [
+        "button[aria-label='Send Message']",
+        "button[aria-label='Send message']",
+        "button[type='submit']",
+      ],
       titleSelector: "nav .truncate",
+      inputSelector: "div[contenteditable='true']",
+      inputType: "contenteditable",
+      responseContainerSelector: "[data-is-streaming], [class*='prose']",
+      loadingIndicatorSelectors: [
+        "[aria-busy='true']",
+        "[aria-label*='typing']",
+        "[aria-label*='Thinking']",
+      ],
+      streamingContainerSelector: "[data-is-streaming='true']",
     },
     gemini: {
       hostname: "gemini.google.com",
-      stopSelectors: ["button[aria-label='Stop response']"],
-      sendSelectors: ["button[aria-label='Send message']"],
-      titleSelector: ".conversation-title",
+      stopSelectors: [
+        "button[aria-label='Stop response']",
+        "button[aria-label='Stop generating']",
+        "button[aria-label='Stop']",
+      ],
+      sendSelectors: [
+        "button[aria-label='Send message']",
+        "button[aria-label='Submit']",
+      ],
+      titleSelector: "[aria-label='Chat title']",
+      inputSelector: "[aria-label='Enter a prompt'], rich-textarea",
+      inputType: "contenteditable",
+      responseContainerSelector:
+        "[role='article'], model-response, [data-message-author='model']",
+      loadingIndicatorSelectors: [
+        "[role='progressbar']",
+        "[aria-busy='true']",
+        "[aria-label*='Loading']",
+      ],
+      streamingContainerSelector: "[aria-live='polite'][aria-atomic='true']",
     },
   },
 };

@@ -1,6 +1,6 @@
 // src/App.jsx
 import { useState, useEffect } from "react";
-import { ChatGPTDetector } from "./logic/detector";
+import { createDetector } from "./logic/detectorFactory";
 
 function App({ platformConfig }) {
   // null = Initial (Grey)
@@ -11,7 +11,7 @@ function App({ platformConfig }) {
   useEffect(() => {
     if (!platformConfig) return;
 
-    const detector = new ChatGPTDetector((isBusy) => {
+    const detector = createDetector((isBusy) => {
       // isBusy will be true (Red) or false (Green)
       setStatus(isBusy);
     }, platformConfig);

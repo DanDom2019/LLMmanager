@@ -47,7 +47,25 @@ export class ChatGPTDetector {
     if (newState !== this.isGenerating) {
       this.isGenerating = newState;
       this.onStatusChange(newState);
+
+      // Notify service worker about status change
+      this._notifyServiceWorker(newState);
     }
+  }
+
+  _notifyServiceWorker(isGenerating) {
+    const status = isGenerating ? "generating" : "complete";
+    const platform = this.platformConfig.hostname.split(".")[0]; // chatgpt, claude, gemini
+
+    chrome.runtime
+      .sendMessage({
+        type: "STATUS_UPDATE",
+        status,
+        platform,
+      })
+      .catch((err) => {
+        console.warn("[Detector] Failed to notify service worker:", err);
+      });
   }
 
   start() {

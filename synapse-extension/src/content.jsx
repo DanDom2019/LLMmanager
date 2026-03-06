@@ -2,7 +2,6 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
 import { ConfigManager } from "./logic/configManager";
-import { ChatGPTDetector } from "./logic/detector";
 
 const configManager = new ConfigManager();
 
