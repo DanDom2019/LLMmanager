@@ -2,21 +2,23 @@
 import { useState, useEffect } from "react";
 import { ChatGPTDetector } from "./logic/detector";
 
-function App() {
+function App({ platformConfig }) {
   // null = Initial (Grey)
   // true = Processing (Red)
   // false = Finished (Green)
   const [status, setStatus] = useState(null);
 
   useEffect(() => {
+    if (!platformConfig) return;
+
     const detector = new ChatGPTDetector((isBusy) => {
       // isBusy will be true (Red) or false (Green)
       setStatus(isBusy);
-    });
+    }, platformConfig);
 
     detector.start();
     return () => detector.stop();
-  }, []);
+  }, [platformConfig]);
 
   // Optional: Click Green ✅ to reset back to Grey 🤖
   const handleReset = () => {

@@ -1,0 +1,43 @@
+{
+  "version": "1.0.3",
+  "lastUpdated": "2026-03-06",
+  "platforms": {
+    "chatgpt": {
+      "hostname": "chatgpt.com",
+      "stopSelectors": [
+        "button[data-testid='stop-button']",
+        "button[aria-label='Stop generating']"
+      ],
+      "sendSelectors": [
+        "button[data-testid='send-button']",
+        "button[aria-label='Send prompt']",
+        "#composer-submit-button"
+      ],
+      "titleSelector": ".conversation-title"
+    },
+    "claude": {
+      "hostname": "claude.ai",
+      "stopSelectors": [
+        "button[aria-label='Stop']",
+        "button[data-testid='stop-response']"
+      ],
+      "sendSelectors": [
+        "button[aria-label='Send message']",
+        "button[type='submit']"
+      ],
+      "titleSelector": "nav .truncate"
+    },
+    "gemini": {
+      "hostname": "gemini.google.com",
+      "stopSelectors": [
+        "button.stop-button",
+        "button[aria-label='Stop response']"
+      ],
+      "sendSelectors": [
+        "button.send-button",
+        "button[aria-label='Send message']"
+      ],
+      "titleSelector": ".conversation-title"
+    }
+  }
+}

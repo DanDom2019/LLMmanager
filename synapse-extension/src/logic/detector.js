@@ -1,84 +1,85 @@
-// src/logic/detector.js
-
+// detector.js - now config-driven
 export class ChatGPTDetector {
-  constructor(onStatusChange) {
+  constructor(onStatusChange, platformConfig) {
     this.onStatusChange = onStatusChange;
+    this.platformConfig = platformConfig; // injected from ConfigManager
     this.isGenerating = false;
     this.observer = null;
     this.checkInterval = null;
-
-    // Standard Selectors
-    this.selectors = [
-      'button[data-testid="send-button"]',
-      'button[data-testid="stop-button"]',
-      'button[aria-label="Send prompt"]',
-      'button[aria-label="Stop generating"]',
-      "#composer-submit-button",
-    ];
-  }
-
-  start() {
-    console.log("[Synapse] Binary Detector Started");
-    // 1. Observe the body for changes (buttons appearing/disappearing)
-    this.observer = new MutationObserver(() => this.checkState());
-    this.observer.observe(document.body, {
-      childList: true,
-      subtree: true,
-      attributes: true,
-      attributeFilter: ["disabled", "data-testid", "aria-label"],
-    });
-
-    // 2. Backup: Check every 1 second just in case MutationObserver misses an attribute change
-    this.checkInterval = setInterval(() => this.checkState(), 1000);
-  }
-
-  stop() {
-    if (this.observer) this.observer.disconnect();
-    if (this.checkInterval) clearInterval(this.checkInterval);
   }
 
   findButton() {
-    for (const selector of this.selectors) {
-      const buttons = document.querySelectorAll(selector);
-      for (const button of buttons) {
-        if (button.offsetWidth > 0 && button.offsetHeight > 0) {
-          return button;
-        }
-      }
+    const { stopSelectors, sendSelectors } = this.platformConfig;
+
+    // Check stop buttons first
+    for (const selector of stopSelectors) {
+      const btn = this._findVisible(selector);
+      if (btn) return { button: btn, type: "stop" };
+    }
+
+    // Then send buttons
+    for (const selector of sendSelectors) {
+      const btn = this._findVisible(selector);
+      if (btn) return { button: btn, type: "send" };
+    }
+
+    return null;
+  }
+
+  _findVisible(selector) {
+    const buttons = document.querySelectorAll(selector);
+    for (const btn of buttons) {
+      if (btn.offsetWidth > 0 && btn.offsetHeight > 0) return btn;
     }
     return null;
   }
 
   checkState() {
-    const button = this.findButton();
-    let newState = false; // Default to IDLE (Green)
+    const found = this.findButton();
+    let newState = false;
 
-    if (button) {
-      const testId = button.getAttribute("data-testid") || "";
-      const ariaLabel = (button.getAttribute("aria-label") || "").toLowerCase();
-      const isDisabled = button.disabled;
-
-      // Logic derived from ChatDinger
-      // A. It's a "Stop" button -> BUSY
-      const isStop = testId.includes("stop") || ariaLabel.includes("stop");
-
-      // B. It's a "Send" button but Disabled -> BUSY
-      const isSendDisabled =
-        (testId.includes("send") || ariaLabel.includes("send")) && isDisabled;
-
-      if (isStop || isSendDisabled) {
-        newState = true; // Processing (Red)
-      }
+    if (found) {
+      const { button, type } = found;
+      if (type === "stop") newState = true;
+      if (type === "send" && button.disabled) newState = true;
     }
-    // Note: If NO button is found, newState remains 'false' (Green/Idle), effectively acting as the Fail-Safe.
 
-    // Only update if state actually changed
     if (newState !== this.isGenerating) {
       this.isGenerating = newState;
-      console.log(
-        `[Synapse] State: ${newState ? "🔴 PROCESSING" : "🟢 FINISHED"}`
-      );
       this.onStatusChange(newState);
+    }
+  }
+
+  start() {
+    console.log("[Synapse Detector] Starting...");
+
+    // Initial check
+    this.checkState();
+
+    // Periodic polling (fallback)
+    this.checkInterval = setInterval(() => this.checkState(), 500);
+
+    // MutationObserver for real-time detection
+    this.observer = new MutationObserver(() => this.checkState());
+    this.observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["disabled", "aria-label"],
+    });
+  }
+
+  stop() {
+    console.log("[Synapse Detector] Stopping...");
+
+    if (this.checkInterval) {
+      clearInterval(this.checkInterval);
+      this.checkInterval = null;
+    }
+
+    if (this.observer) {
+      this.observer.disconnect();
+      this.observer = null;
     }
   }
 }

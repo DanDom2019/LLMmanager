@@ -2,7 +2,17 @@
   "manifest_version": 3,
   "name": "Synapse - AI Manager",
   "version": "1.0.0",
-  "action": { "default_popup": "index.html" },
+  "description": "AI chat manager for ChatGPT, Claude, and Gemini",
+  "action": {
+    "default_popup": "index.html",
+    "default_title": "Synapse AI Manager",
+    "default_icon": "vite.svg"
+  },
+  "icons": {
+    "16": "vite.svg",
+    "48": "vite.svg",
+    "128": "vite.svg"
+  },
   "permissions": ["scripting", "activeTab"],
   "host_permissions": ["<all_urls>"],
   "content_scripts": [
