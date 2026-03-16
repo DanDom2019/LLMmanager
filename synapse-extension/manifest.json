@@ -13,8 +13,12 @@
     "48": "vite.svg",
     "128": "vite.svg"
   },
-  "permissions": ["scripting", "activeTab"],
+  "permissions": ["scripting", "activeTab", "storage", "notifications"],
   "host_permissions": ["<all_urls>"],
+  "background": {
+    "service_worker": "src/service-worker.js",
+    "type": "module"
+  },
   "content_scripts": [
     {
       "js": ["src/content.jsx"],

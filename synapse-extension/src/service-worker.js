@@ -7,13 +7,7 @@ const activeSessions = new Map();
 // Listen for extension installation
 chrome.runtime.onInstalled.addListener(() => {
   console.log("Synapse extension installed");
-
-  // Initialize default settings
-  chrome.storage.local.set({
-    enableNotifications: true,
-    enableSound: false,
-    sessionHistory: [],
-  });
+  chrome.storage.local.set({ sessionHistory: [] });
 });
 
 // Listen for messages from content scripts or popup
@@ -71,16 +65,6 @@ function handleStatusUpdate(message, sender) {
 
       // Save to history
       saveToHistory({ ...session, duration, endTime: Date.now() });
-
-      // Show notification
-      chrome.storage.local.get(["enableNotifications"], (result) => {
-        if (result.enableNotifications) {
-          showNotification(
-            `${platform} finished!`,
-            `Response completed in ${Math.round(duration / 1000)} seconds`,
-          );
-        }
-      });
 
       activeSessions.delete(tabId);
     }
