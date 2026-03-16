@@ -14,6 +14,10 @@ async function bootstrap() {
     return;
   }
 
+  // Attach config metadata so detectors can include it in STATUS_UPDATE messages
+  platformConfig._configSource = configManager.configSource;
+  platformConfig._configVersion = configManager.configVersion;
+
   console.log("[Synapse] Platform detected:", platformConfig.hostname);
 
   // 1. Create a container element

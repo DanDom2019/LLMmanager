@@ -4,6 +4,9 @@ console.log("Synapse service worker loaded");
 // Track active AI sessions across tabs
 const activeSessions = new Map();
 
+// Per-tab debug state for the popup (platform, signals, config info)
+const tabState = new Map();
+
 // Listen for extension installation
 chrome.runtime.onInstalled.addListener(() => {
   console.log("Synapse extension installed");
@@ -28,6 +31,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       sendResponse({ sessions: Array.from(activeSessions.entries()) });
       break;
 
+    case "GET_TAB_STATE": {
+      const state = tabState.get(message.tabId) || null;
+      sendResponse({ state });
+      break;
+    }
+
     case "NOTIFY":
       showNotification(message.title, message.body);
       sendResponse({ success: true });
@@ -45,27 +54,33 @@ function handleStatusUpdate(message, sender) {
   const tabId = sender.tab?.id;
   if (!tabId) return;
 
-  const { status, platform } = message;
+  const { platform, isGenerating, signals, configSource, configVersion } = message;
 
-  // Update session tracking
-  if (status === "generating") {
+  // Store debug state for the popup
+  tabState.set(tabId, {
+    platform,
+    isGenerating,
+    signals: signals || null,
+    configSource: configSource || "bundled",
+    configVersion: configVersion || "unknown",
+    updatedAt: Date.now(),
+  });
+
+  // Legacy session tracking (preserving existing behaviour)
+  if (isGenerating === true && !activeSessions.has(tabId)) {
     activeSessions.set(tabId, {
       platform,
       startTime: Date.now(),
       url: sender.tab.url,
     });
-  } else if (status === "complete") {
+  } else if (isGenerating === false) {
     const session = activeSessions.get(tabId);
     if (session) {
-      // Calculate duration
       const duration = Date.now() - session.startTime;
       console.log(
         `[SW] ${platform} completed in ${Math.round(duration / 1000)}s`,
       );
-
-      // Save to history
       saveToHistory({ ...session, duration, endTime: Date.now() });
-
       activeSessions.delete(tabId);
     }
   }
@@ -103,4 +118,5 @@ chrome.tabs.onRemoved.addListener((tabId) => {
     console.log(`[SW] Tab ${tabId} closed, cleaning up session`);
     activeSessions.delete(tabId);
   }
+  tabState.delete(tabId);
 });

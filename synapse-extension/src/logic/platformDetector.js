@@ -8,6 +8,7 @@ export class PlatformDetector {
     this.checkInterval = null;
     this.lastContentLength = 0;
     this._checkCount = 0;
+    this._lastSwUpdate = 0;
   }
 
   collectSignals() {
@@ -100,13 +101,28 @@ export class PlatformDetector {
       console.groupEnd();
     }
 
-    if (newState !== this.isGenerating) {
+    const stateChanged = newState !== this.isGenerating;
+    if (stateChanged) {
       console.log(
         `${tag} 🔄 STATE CHANGE: ${this.isGenerating} → ${newState}`,
         signals
       );
       this.isGenerating = newState;
       this.onStatusChange(newState);
+    }
+
+    // Send to service worker: always on state change, throttled to 300ms otherwise
+    const now = Date.now();
+    if (stateChanged || now - this._lastSwUpdate >= 300) {
+      this._lastSwUpdate = now;
+      chrome.runtime.sendMessage({
+        type: "STATUS_UPDATE",
+        platform: this.platformConfig.hostname,
+        isGenerating: newState,
+        signals,
+        configSource: this.platformConfig._configSource || "bundled",
+        configVersion: this.platformConfig._configVersion || "unknown",
+      }).catch(() => {}); // swallow "no listener" errors (e.g. SW not ready)
     }
   }
 

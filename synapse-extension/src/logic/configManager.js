@@ -80,11 +80,14 @@ const FALLBACK_CONFIG = {
 export class ConfigManager {
   constructor() {
     this.config = null;
+    this.configSource = "bundled";
+    this.configVersion = FALLBACK_CONFIG.version;
   }
 
   // Call this once when the extension loads
   async init() {
     this.config = await this._loadConfig();
+    this.configVersion = this.config?.version || FALLBACK_CONFIG.version;
     return this.config;
   }
 
@@ -105,11 +108,15 @@ export class ConfigManager {
     try {
       // 1. Check cache first
       const cached = await this._getCached();
-      if (cached) return cached;
+      if (cached) {
+        this.configSource = "cache";
+        return cached;
+      }
 
       // 2. Fetch remote
       const remote = await this._fetchRemote();
       if (remote) {
+        this.configSource = "remote";
         await this._saveCache(remote);
         return remote;
       }
@@ -118,6 +125,7 @@ export class ConfigManager {
     }
 
     // 3. Use bundled fallback
+    this.configSource = "bundled";
     return FALLBACK_CONFIG;
   }
 

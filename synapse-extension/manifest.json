@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "description": "AI chat manager for ChatGPT, Claude, and Gemini",
   "action": {
-    "default_popup": "index.html",
+    "default_popup": "popup.html",
     "default_title": "Synapse AI Manager",
     "default_icon": "vite.svg"
   },

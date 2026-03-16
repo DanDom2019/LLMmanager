@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Synapse Debug</title>
+    <style>
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+      body {
+        width: 320px;
+        font-family: ui-monospace, "Cascadia Code", "Fira Mono", monospace;
+        font-size: 12px;
+        background: #0f1117;
+        color: #c9d1d9;
+        padding: 12px;
+      }
+
+      header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 14px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #21262d;
+      }
+
+      header .logo { font-size: 18px; }
+
+      header h1 {
+        font-size: 13px;
+        font-weight: 600;
+        color: #e6edf3;
+        letter-spacing: 0.02em;
+      }
+
+      header .subtitle {
+        font-size: 10px;
+        color: #6e7681;
+        margin-top: 1px;
+      }
+
+      section {
+        margin-bottom: 12px;
+      }
+
+      .section-label {
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #6e7681;
+        margin-bottom: 5px;
+      }
+
+      .value-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: #161b22;
+        border: 1px solid #21262d;
+        border-radius: 6px;
+        padding: 6px 10px;
+      }
+
+      .value-label {
+        color: #6e7681;
+        font-size: 11px;
+      }
+
+      .value-text {
+        color: #e6edf3;
+        font-size: 11px;
+        font-weight: 500;
+        text-align: right;
+        max-width: 180px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      /* Status badge */
+      .badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.03em;
+      }
+
+      .badge-idle {
+        background: #21262d;
+        color: #8b949e;
+      }
+
+      .badge-processing {
+        background: #3d1c1c;
+        color: #ff7b72;
+        box-shadow: 0 0 6px rgba(255, 77, 77, 0.35);
+      }
+
+      .badge-done {
+        background: #1a3128;
+        color: #56d364;
+      }
+
+      /* Signals list */
+      .signals-list {
+        list-style: none;
+        background: #161b22;
+        border: 1px solid #21262d;
+        border-radius: 6px;
+        overflow: hidden;
+      }
+
+      .signals-list li {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 5px 10px;
+        border-bottom: 1px solid #21262d;
+        transition: background 0.1s;
+      }
+
+      .signals-list li:last-child {
+        border-bottom: none;
+      }
+
+      .signal-fired {
+        background: #1e2d1e;
+      }
+
+      .signal-off {
+        opacity: 0.55;
+      }
+
+      .signal-dot {
+        font-size: 10px;
+        width: 12px;
+        flex-shrink: 0;
+      }
+
+      .signal-fired .signal-dot {
+        color: #56d364;
+      }
+
+      .signal-off .signal-dot {
+        color: #6e7681;
+      }
+
+      .signal-name {
+        flex: 1;
+        color: #c9d1d9;
+        font-size: 11px;
+      }
+
+      .signal-fired .signal-name {
+        color: #e6edf3;
+        font-weight: 600;
+      }
+
+      .signal-key {
+        color: #6e7681;
+        font-size: 10px;
+        font-style: italic;
+      }
+
+      .no-data {
+        color: #6e7681;
+        font-size: 11px;
+        padding: 10px !important;
+        text-align: center;
+      }
+
+      /* Config rows */
+      .config-grid {
+        background: #161b22;
+        border: 1px solid #21262d;
+        border-radius: 6px;
+        overflow: hidden;
+      }
+
+      .config-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 5px 10px;
+        border-bottom: 1px solid #21262d;
+      }
+
+      .config-row:last-child {
+        border-bottom: none;
+      }
+
+      footer {
+        margin-top: 10px;
+        padding-top: 8px;
+        border-top: 1px solid #21262d;
+        display: flex;
+        justify-content: space-between;
+        color: #6e7681;
+        font-size: 10px;
+      }
+
+      #updated-at {
+        color: #8b949e;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <span class="logo">🤖</span>
+      <div>
+        <h1>Synapse Debug</h1>
+        <div class="subtitle">Real-time detector inspector</div>
+      </div>
+    </header>
+
+    <section>
+      <div class="section-label">Active Tab</div>
+      <div class="value-row">
+        <span class="value-label">Platform</span>
+        <span class="value-text" id="platform">Detecting…</span>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-label">Detector State</div>
+      <div class="value-row">
+        <span class="value-label">Status</span>
+        <span id="status-badge" class="badge badge-idle">Idle</span>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-label">Last Signal Breakdown</div>
+      <ul class="signals-list" id="signals-list">
+        <li class="no-data">Waiting for data…</li>
+      </ul>
+    </section>
+
+    <section>
+      <div class="section-label">Config</div>
+      <div class="config-grid">
+        <div class="config-row">
+          <span class="value-label">Source</span>
+          <span class="value-text" id="config-source">—</span>
+        </div>
+        <div class="config-row">
+          <span class="value-label">Version</span>
+          <span class="value-text" id="config-version">—</span>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      <span>Polling every 500ms</span>
+      <span>Updated: <span id="updated-at">—</span></span>
+    </footer>
+
+    <script type="module" src="/src/popup.js"></script>
+  </body>
+</html>
